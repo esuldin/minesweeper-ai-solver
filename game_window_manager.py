@@ -2,91 +2,160 @@ import numpy
 
 import ctypes
 from ctypes import windll
-from ctypes.wintypes import WORD, DWORD, LONG, HWND, LPARAM, RECT
+from ctypes import wintypes
 
 
 class BITMAPINFOHEADER(ctypes.Structure):
-    _fields_ = [('biSize', DWORD),
-                ('biWidth', LONG),
-                ('biHeight', LONG),
-                ('biPlanes', WORD),
-                ('biBitCount', WORD),
-                ('biCompression', DWORD),
-                ('biSizeImage', DWORD),
-                ('biXPelsPerMeter', LONG),
-                ('biYPelsPerMeter', LONG),
-                ('biClrUsed', DWORD),
-                ('biClrImportant', DWORD)]
+    _fields_ = [('biSize', wintypes.DWORD),
+                ('biWidth', wintypes.LONG),
+                ('biHeight', wintypes.LONG),
+                ('biPlanes', wintypes.WORD),
+                ('biBitCount', wintypes.WORD),
+                ('biCompression', wintypes.DWORD),
+                ('biSizeImage', wintypes.DWORD),
+                ('biXPelsPerMeter', wintypes.LONG),
+                ('biYPelsPerMeter', wintypes.LONG),
+                ('biClrUsed', wintypes.DWORD),
+                ('biClrImportant', wintypes.DWORD)]
+
+
+class RGBQUAD(ctypes.Structure):
+    _fields_ = [('rgbBlue', wintypes.BYTE),
+                ('rgbGreen', wintypes.BYTE),
+                ('rgbRed', wintypes.BYTE),
+                ('rgbReserved', wintypes.BYTE)]
 
 
 class BITMAPINFO(ctypes.Structure):
-    _fields_ = [('bmiHeader', BITMAPINFOHEADER)]
+    _fields_ = [('bmiHeader', BITMAPINFOHEADER),
+                ('bmiColors', RGBQUAD)]
 
 
-EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_int, HWND, LPARAM)
-
-BI_RGB = 0
-DIB_RGB_COLORS = 0
-PW_CLIENTONLY = 1
-PW_RENDERFULLCONTENT = 2
+class BI:
+    RGB = 0
 
 
-class GameWindowManager:
-    def __init__(self):
-        self._hwnd = self._get_window()
+class DIB:
+    RGB_COLORS = 0
 
-    @staticmethod
-    def _get_window():
-        minesweeper_window_caption = 'Microsoft Minesweeper'
-        window_caption_buffer = ctypes.create_unicode_buffer(len(minesweeper_window_caption) + 1)
 
-        minesweeper_window_hwnd = None
+class PW:
+    CLIENTONLY = 1
+    RENDERFULLCONTENT = 2
 
-        def _window_enumeration_callback(hwnd, param):
-            nonlocal minesweeper_window_hwnd
-            windll.user32.GetWindowTextW(hwnd, window_caption_buffer, len(window_caption_buffer))
-            if window_caption_buffer.value == minesweeper_window_caption:
-                minesweeper_window_hwnd = hwnd
-                return 0
-            return 1
 
-        windll.user32.EnumWindows(EnumWindowsProc(_window_enumeration_callback), 0)
+class WindowDC:
+    def __init__(self, window):
+        self._window = window
+        self._hdc = None
 
-        return minesweeper_window_hwnd
+    def __enter__(self):
+        self._hdc = windll.user32.GetWindowDC(self._window.handle())
+        return self
 
-    def get_picture(self):
-        rect = RECT()
+    def __exit__(self, *args):
+        windll.user32.ReleaseDC(self._window.handle(), self._hdc)
+        self._hdc = None
+
+    def handle(self):
+        return self._hdc
+
+
+class Window:
+    def __init__(self, caption):
+        self._hwnd = windll.user32.FindWindowW(None, caption)
+
+    def handle(self):
+        return self._hwnd
+
+    def dc(self):
+        return WindowDC(self)
+
+    def print(self, dc):
+        windll.user32.PrintWindow(self.handle(), dc.handle(), PW.CLIENTONLY | PW.RENDERFULLCONTENT)
+
+    def size(self):
+        rect = wintypes.RECT()
         windll.user32.GetClientRect(self._hwnd, ctypes.byref(rect))
 
         height = rect.bottom - rect.top
         width = rect.right - rect.left
 
-        window_dc = windll.user32.GetWindowDC(self._hwnd)
-        target_dc = windll.gdi32.CreateCompatibleDC(window_dc)
+        return width, height
 
-        bitmap = windll.gdi32.CreateCompatibleBitmap(window_dc, width, height)
-        windll.gdi32.SelectObject(target_dc, bitmap)
 
-        windll.user32.PrintWindow(self._hwnd, target_dc, PW_CLIENTONLY | PW_RENDERFULLCONTENT)
+class CompatibleDC:
+    def __init__(self, dc):
+        self._dc = dc
+        self._hdc = None
 
+    def __enter__(self):
+        self._hdc = windll.gdi32.CreateCompatibleDC(self._dc.handle())
+        return self
+
+    def __exit__(self, *args):
+        windll.gdi32.DeleteDC(self._hdc)
+        self._hdc = None
+
+    def handle(self):
+        return self._hdc
+
+    def select(self, obj):
+        windll.gdi32.SelectObject(self.handle(), obj.handle())
+
+    def bitmap_data(self, bitmap):
+        return bitmap.data(self)
+
+
+class CompatibleBitmap:
+    def __init__(self, dc, width, height):
+        self._dc = dc
+        self._height = height
+        self._width = width
+        self._hbitmap = None
+
+    def __enter__(self):
+        self._hbitmap = windll.gdi32.CreateCompatibleBitmap(self._dc.handle(), self._width, self._height)
+        return self
+
+    def __exit__(self, *args):
+        windll.gdi32.DeleteObject(self._hbitmap)
+        self._hbitmap = None
+
+    def handle(self):
+        return self._hbitmap
+
+    def data(self, dc):
         bitmap_info = BITMAPINFO()
         bitmap_info.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
-        bitmap_info.bmiHeader.biWidth = width
-        bitmap_info.bmiHeader.biHeight = -height
+        bitmap_info.bmiHeader.biWidth = self._width
+        bitmap_info.bmiHeader.biHeight = -self._height
         bitmap_info.bmiHeader.biPlanes = 1
         bitmap_info.bmiHeader.biBitCount = 32
-        bitmap_info.bmiHeader.biCompression = BI_RGB
+        bitmap_info.bmiHeader.biCompression = BI.RGB
 
-        image_buffer_len = width * height * 4
+        image_buffer_len = self._width * self._height * 4
         image_buffer = ctypes.create_string_buffer(image_buffer_len)
-        windll.gdi32.GetDIBits(target_dc, bitmap, 0, height, image_buffer, ctypes.byref(bitmap_info), DIB_RGB_COLORS)
-
-        windll.gdi32.DeleteObject(bitmap)
-        windll.gdi32.DeleteDC(target_dc)
-        windll.user32.ReleaseDC(self._hwnd, window_dc)
+        windll.gdi32.GetDIBits(dc.handle(), self.handle(), 0, self._height, image_buffer,
+                               ctypes.byref(bitmap_info), DIB.RGB_COLORS)
 
         image_buffer = numpy.frombuffer(image_buffer.raw, dtype=numpy.uint8)
-        image_buffer.shape = (height, width, 4)
+        image_buffer.shape = (self._height, self._width, 4)
 
         return numpy.copy(image_buffer[:, :, :3])
 
+
+class GameWindowManager:
+    def __init__(self):
+        self._window = Window('Microsoft Minesweeper')
+
+    def get_picture(self):
+        width, height = self._window.size()
+
+        with self._window.dc() as window_dc:
+            with CompatibleDC(window_dc) as target_dc:
+                with CompatibleBitmap(window_dc, width, height) as bitmap:
+                    target_dc.select(bitmap)
+                    self._window.print(target_dc)
+
+                    return target_dc.bitmap_data(bitmap)
