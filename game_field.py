@@ -1,5 +1,8 @@
-import cv2 as cv
-import numpy as np
+import cv2
+import numpy
+import os
+
+import pattern_matching
 
 
 class TrimMode:
@@ -11,6 +14,7 @@ class ColorComponent:
 
 
 class CellState:
+    MINE = -2
     CLOSED = -1
     NO_MINES_NEARBY = 0
     ONE_MINE_NEARBY = 1
@@ -23,15 +27,53 @@ class CellState:
     EIGHT_MINES_NEARBY = 8
 
 
+class PatternLibrary:
+    def __init__(self, directory=None):
+        pattern_images = {
+            CellState.MINE: 'mine.png',
+            CellState.CLOSED: 'closed.png',
+            CellState.NO_MINES_NEARBY: 'empty.png',
+            CellState.ONE_MINE_NEARBY: '1.png',
+            CellState.TWO_MINES_NEARBY: '2.png',
+            CellState.THREE_MINES_NEARBY: '3.png',
+            CellState.FOUR_MINES_NEARBY: '4.png',
+            CellState.FIVE_MINES_NEARBY: '5.png',
+            CellState.SIX_MINES_NEARBY: '6.png',
+            CellState.SEVEN_MINES_NEARBY: '7.png',
+            CellState.EIGHT_MINES_NEARBY: '8.png',
+        }
+
+        if directory is None:
+            directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'patterns')
+
+        self._image_size = (48, 48)
+
+        self._patterns = {key: pattern_matching.ImagePattern(cv2.resize(cv2.imread(os.path.join(directory, value)), self._image_size))
+                          for key, value in pattern_images.items()}
+
+    def match(self, img):
+        min_distance = None
+        matched_state = None
+
+        img_desc = pattern_matching.ImagePattern(img).descriptor()
+
+        for state, pattern in self._patterns.items():
+            distance = pattern.distance(img_desc)
+            if min_distance is None or distance < min_distance:
+                min_distance = distance
+                matched_state = state
+
+        return matched_state
+
+
 class MsMinesweeperClassicField:
     def __init__(self, window_manager):
         self._window_manager = window_manager
+        self._pattern_library = PatternLibrary()
         self._horizontal_lines = []
         self._vertical_lines = []
         self._min_distance_between_lines = 20
         self._field_header_height = 68
-        self._field_left_top_corner = (0, 0)
-        self._field_right_bottom_corner = (0, 0)
 
         self._create_field()
 
@@ -82,20 +124,20 @@ class MsMinesweeperClassicField:
 
     def _create_field(self):
         img = self._window_manager.get_picture()
-        cv.imwrite('window.png', img)
+        cv2.imwrite('window.png', img)
 
-        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-        cv.imwrite('gray.png', gray)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        cv2.imwrite('gray.png', gray)
 
-        edges = cv.Canny(gray, 250, 300)
-        cv.imwrite('edges.png', edges)
+        edges = cv2.Canny(gray, 250, 300)
+        cv2.imwrite('edges.png', edges)
 
-        detected_lines = cv.HoughLines(edges, 0.1, np.pi / 180, 200)
+        detected_lines = cv2.HoughLines(edges, 0.1, numpy.pi / 180, 200)
 
         for line in detected_lines:
             rho, theta = line[0]
-            a = int(np.cos(theta))
-            b = int(np.sin(theta))
+            a = int(numpy.cos(theta))
+            b = int(numpy.sin(theta))
 
             if a == 0 and b == 1:
                 self._horizontal_lines.append(int(rho))
@@ -113,17 +155,49 @@ class MsMinesweeperClassicField:
 
         self._field = [[CellState.CLOSED for _ in self._vertical_lines[:-1]] for _ in self._horizontal_lines[:-1]]
 
-        self._field_left_top_corner = (self._vertical_lines[0], self._horizontal_lines[0])
-        self._field_right_bottom_corner = (self._vertical_lines[-1], self._horizontal_lines[-1])
+        _field_left_top_corner = (self._vertical_lines[0], self._horizontal_lines[0])
+        _field_right_bottom_corner = (self._vertical_lines[-1], self._horizontal_lines[-1])
 
         # debug image
         for line in self._vertical_lines:
             x = line
-            cv.line(img, (x, self._field_left_top_corner[1]), (x, self._field_right_bottom_corner[1]), (0, 0, 255), 1)
+            cv2.line(img, (x, _field_left_top_corner[1]), (x, _field_right_bottom_corner[1]), (0, 0, 255), 1)
 
         for line in self._horizontal_lines:
             y = line
-            cv.line(img, (self._field_left_top_corner[0], y), (self._field_right_bottom_corner[0], y), (0, 0, 255), 1)
+            cv2.line(img, (_field_left_top_corner[0], y), (_field_right_bottom_corner[0], y), (0, 0, 255), 1)
 
-        cv.imwrite('lines.png', img)
+        cv2.imwrite('lines.png', img)
 
+    def _update_field(self):
+        img = self._window_manager.get_picture()
+        cv2.imwrite('update_field.png', img)
+
+        for horizontal_line_idx in range(len(self._horizontal_lines) - 1):
+            for vertical_line_idx in range(len(self._vertical_lines) - 1):
+                top = self._horizontal_lines[horizontal_line_idx]
+                left = self._vertical_lines[vertical_line_idx]
+                bottom = self._horizontal_lines[horizontal_line_idx + 1]
+                right = self._vertical_lines[vertical_line_idx + 1]
+
+                cell_img = img[top:bottom, left:right]
+
+                if horizontal_line_idx == 0 and vertical_line_idx == 8:
+                    cv2.imwrite('%d-%d.png' % (horizontal_line_idx, vertical_line_idx), cell_img)
+
+                self._field[horizontal_line_idx][vertical_line_idx] = self._pattern_library.match(cell_img)
+
+
+
+    def field(self):
+        return self._field
+
+    def open(self, idx):
+        y_idx = idx // (len(self._vertical_lines) - 1)
+        x_idx = idx % (len(self._vertical_lines) - 1)
+
+        x = (self._vertical_lines[x_idx] + self._vertical_lines[x_idx + 1]) // 2
+        y = (self._horizontal_lines[y_idx] + self._horizontal_lines[y_idx + 1]) // 2
+
+        self._window_manager.click(x, y)
+        self._update_field()
