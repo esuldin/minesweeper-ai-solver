@@ -23,7 +23,7 @@ class CellState:
     EIGHT_MINES_NEARBY = 8
 
 
-class GameField:
+class MsMinesweeperClassicField:
     def __init__(self, window_manager):
         self._window_manager = window_manager
         self._horizontal_lines = []

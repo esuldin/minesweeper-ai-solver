@@ -1,7 +1,7 @@
-from game_window_manager import GameWindowManager
-from game_field import GameField
+from game_window_manager import MsMinesweeperWindowManager
+from game_field import MsMinesweeperClassicField
 
-window_manager = GameWindowManager()
-field = GameField(window_manager)
+window_manager = MsMinesweeperWindowManager()
+field = MsMinesweeperClassicField(window_manager)
 
 print(field._field)

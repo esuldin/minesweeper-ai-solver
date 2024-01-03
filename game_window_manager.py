@@ -146,8 +146,8 @@ class CompatibleBitmap:
 
 
 class GameWindowManager:
-    def __init__(self):
-        self._window = Window('Microsoft Minesweeper')
+    def __init__(self, window_caption):
+        self._window = Window(window_caption)
 
     def get_picture(self):
         width, height = self._window.size()
@@ -159,3 +159,8 @@ class GameWindowManager:
                     self._window.print(target_dc)
 
                     return target_dc.bitmap_data(bitmap)
+
+
+class MsMinesweeperWindowManager(GameWindowManager):
+    def __init__(self):
+        super(MsMinesweeperWindowManager, self).__init__('Microsoft Minesweeper')
