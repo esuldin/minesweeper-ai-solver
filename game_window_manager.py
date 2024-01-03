@@ -44,6 +44,63 @@ class PW:
     RENDERFULLCONTENT = 2
 
 
+class HARDWAREINPUT(ctypes.Structure):
+    _fields_ = [('uMsg', wintypes.DWORD),
+                ('wParamL', wintypes.WORD),
+                ('wParamH', wintypes.WORD)]
+
+
+class KEYBDINPUT(ctypes.Structure):
+    _fields_ = [('wVk', wintypes.WORD),
+                ('wScan', wintypes.WORD),
+                ('dwFlags', wintypes.DWORD),
+                ('time', wintypes.DWORD),
+                ('dwExtraInfo', ctypes.POINTER(wintypes.ULONG))]
+
+
+class MOUSEINPUT(ctypes.Structure):
+    _fields_ = [('dx', wintypes.LONG),
+                ('dy', wintypes.LONG),
+                ('mouseData', wintypes.DWORD),
+                ('dwFlags', wintypes.DWORD),
+                ('time', wintypes.DWORD),
+                ('dwExtraInfo', ctypes.POINTER(wintypes.ULONG))]
+
+
+class INPUTUNION(ctypes.Union):
+    _fields_ = [('mi', MOUSEINPUT),
+                ('ki', KEYBDINPUT),
+                ('hi', HARDWAREINPUT)]
+
+
+class INPUT(ctypes.Structure):
+    _fields_ = [('type', wintypes.DWORD),
+                ('iu', INPUTUNION)]
+
+
+class I:
+    MOUSE = 0
+    KEYBOARD = 1
+    HARDWARE = 2
+
+
+class MOUSEEVENTF:
+    MOVE = 0x0001
+    LEFTDOWN = 0x0002
+    LEFTUP = 0x0004
+    RIGHTDOWN = 0x0008
+    RIGHTUP = 0x0010
+    MIDDLEDOWN = 0x0020
+    MIDDLEUP = 0x0040
+    XDOWN = 0x0080
+    XUP = 0x0100
+    WHEEL = 0x0800
+    HWHEEL = 0x01000
+    MOVE_NOCOALESCE = 0x2000
+    VIRTUALDESK = 0x4000
+    ABSOLUTE = 0x8000
+
+
 class WindowDC:
     def __init__(self, window):
         self._window = window
@@ -74,14 +131,34 @@ class Window:
     def print(self, dc):
         windll.user32.PrintWindow(self.handle(), dc.handle(), PW.CLIENTONLY | PW.RENDERFULLCONTENT)
 
-    def size(self):
+    def _rect(self):
         rect = wintypes.RECT()
         windll.user32.GetClientRect(self._hwnd, ctypes.byref(rect))
+        return rect
+
+    def size(self):
+        rect = self._rect()
 
         height = rect.bottom - rect.top
         width = rect.right - rect.left
 
         return width, height
+
+    def click(self, x, y):
+        windll.user32.SetForegroundWindow(self._hwnd)
+
+        rect = self._rect()
+        windll.user32.SetCursorPos(rect.left + x, rect.top + y)
+
+        mouse_left_down = INPUT()
+        mouse_left_down.type = I.MOUSE
+        mouse_left_down.iu.mi.dwFlags = MOUSEEVENTF.LEFTDOWN
+        windll.user32.SendInput(1, ctypes.byref(mouse_left_down), ctypes.sizeof(mouse_left_down))
+
+        mouse_left_up = INPUT()
+        mouse_left_up.type = I.MOUSE
+        mouse_left_up.iu.mi.dwFlags = MOUSEEVENTF.LEFTUP
+        windll.user32.SendInput(1, ctypes.byref(mouse_left_up), ctypes.sizeof(mouse_left_up))
 
 
 class CompatibleDC:
@@ -159,6 +236,9 @@ class GameWindowManager:
                     self._window.print(target_dc)
 
                     return target_dc.bitmap_data(bitmap)
+
+    def click(self, x, y):
+        self._window.click(x, y)
 
 
 class MsMinesweeperWindowManager(GameWindowManager):
