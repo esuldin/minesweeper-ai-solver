@@ -2,9 +2,6 @@ import cv2
 import numpy
 import os
 
-import pattern_matching
-
-
 class TrimMode:
     VERTICAL_LINES, HORIZONTAL_LINES = (0, 1)
 
@@ -46,21 +43,25 @@ class PatternLibrary:
         if directory is None:
             directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'patterns')
 
-        self._image_size = (48, 48)
+        self._image_size = (52, 51)
 
-        self._patterns = {key: pattern_matching.ImagePattern(cv2.resize(cv2.imread(os.path.join(directory, value)), self._image_size))
-                          for key, value in pattern_images.items()}
+        self._patterns = {
+            key: cv2.imread(os.path.join(directory, value))
+            for key, value in pattern_images.items()}
 
     def match(self, img):
+        scaled_img = cv2.resize(img, self._image_size)
+        cv2.imwrite('scaled.png', scaled_img)
+
         min_distance = None
         matched_state = None
 
-        img_desc = pattern_matching.ImagePattern(img).descriptor()
-
         for state, pattern in self._patterns.items():
-            distance = pattern.distance(img_desc)
-            if min_distance is None or distance < min_distance:
-                min_distance = distance
+            match_result = cv2.matchTemplate(scaled_img, pattern, cv2.TM_SQDIFF_NORMED)
+            min_val, max_val, _, _ = cv2.minMaxLoc(match_result)
+
+            if min_distance is None or min_val < min_distance:
+                min_distance = min_val
                 matched_state = state
 
         return matched_state
@@ -182,12 +183,10 @@ class MsMinesweeperClassicField:
 
                 cell_img = img[top:bottom, left:right]
 
-                if horizontal_line_idx == 0 and vertical_line_idx == 8:
-                    cv2.imwrite('%d-%d.png' % (horizontal_line_idx, vertical_line_idx), cell_img)
+                #if horizontal_line_idx == 1 and vertical_line_idx == 29:
+                #    cv2.imwrite('%d-%d.png' % (horizontal_line_idx, vertical_line_idx), cell_img)
 
                 self._field[horizontal_line_idx][vertical_line_idx] = self._pattern_library.match(cell_img)
-
-
 
     def field(self):
         return self._field
