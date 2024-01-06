@@ -2,26 +2,15 @@ import cv2
 import numpy
 import os
 
+from minesweeper import CellState
+
+
 class TrimMode:
     VERTICAL_LINES, HORIZONTAL_LINES = (0, 1)
 
 
 class ColorComponent:
     B = 0
-
-
-class CellState:
-    MINE = -2
-    CLOSED = -1
-    NO_MINES_NEARBY = 0
-    ONE_MINE_NEARBY = 1
-    TWO_MINES_NEARBY = 2
-    THREE_MINES_NEARBY = 3
-    FOUR_MINES_NEARBY = 4
-    FIVE_MINES_NEARBY = 5
-    SIX_MINES_NEARBY = 6
-    SEVEN_MINES_NEARBY = 7
-    EIGHT_MINES_NEARBY = 8
 
 
 class PatternLibrary:
@@ -125,13 +114,13 @@ class MsMinesweeperClassicField:
 
     def _create_field(self):
         img = self._window_manager.get_picture()
-        cv2.imwrite('window.png', img)
+        cv2.imwrite('../window.png', img)
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        cv2.imwrite('gray.png', gray)
+        cv2.imwrite('../gray.png', gray)
 
         edges = cv2.Canny(gray, 250, 300)
-        cv2.imwrite('edges.png', edges)
+        cv2.imwrite('../edges.png', edges)
 
         detected_lines = cv2.HoughLines(edges, 0.1, numpy.pi / 180, 200)
 
@@ -168,11 +157,11 @@ class MsMinesweeperClassicField:
             y = line
             cv2.line(img, (_field_left_top_corner[0], y), (_field_right_bottom_corner[0], y), (0, 0, 255), 1)
 
-        cv2.imwrite('lines.png', img)
+        cv2.imwrite('../lines.png', img)
 
     def _update_field(self):
         img = self._window_manager.get_picture()
-        cv2.imwrite('update_field.png', img)
+        cv2.imwrite('../update_field.png', img)
 
         for horizontal_line_idx in range(len(self._horizontal_lines) - 1):
             for vertical_line_idx in range(len(self._vertical_lines) - 1):
