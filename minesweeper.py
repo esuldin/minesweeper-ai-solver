@@ -32,3 +32,9 @@ class CellState:
     SIX_MINES_NEARBY = 6
     SEVEN_MINES_NEARBY = 7
     EIGHT_MINES_NEARBY = 8
+
+
+class GameState:
+    IN_PROGRESS = 1
+    GAME_OVER = 2
+    WIN = 3
