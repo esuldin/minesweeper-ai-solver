@@ -1,5 +1,5 @@
-import unittest
 import numpy
+import unittest
 
 from minesweeper_game.game_field import MinesweeperGame
 from minesweeper import Mode, CellState, GameState
