@@ -1,4 +1,5 @@
 import numpy
+import time
 
 import ctypes
 from ctypes import windll
@@ -131,13 +132,19 @@ class Window:
     def print(self, dc):
         windll.user32.PrintWindow(self.handle(), dc.handle(), PW.CLIENTONLY | PW.RENDERFULLCONTENT)
 
-    def _rect(self):
+    def _client_rect(self):
         rect = wintypes.RECT()
         windll.user32.GetClientRect(self._hwnd, ctypes.byref(rect))
         return rect
 
-    def size(self):
-        rect = self._rect()
+    def _window_rect(self):
+        rect = wintypes.RECT()
+        windll.user32.GetWindowRect(self._hwnd, ctypes.byref(rect))
+        return rect
+
+
+    def client_size(self):
+        rect = self._client_rect()
 
         height = rect.bottom - rect.top
         width = rect.right - rect.left
@@ -147,7 +154,7 @@ class Window:
     def click(self, x, y):
         windll.user32.SetForegroundWindow(self._hwnd)
 
-        rect = self._rect()
+        rect = self._window_rect()
         windll.user32.SetCursorPos(rect.left + x, rect.top + y)
 
         mouse_left_down = INPUT()
@@ -227,7 +234,7 @@ class GameWindowManager:
         self._window = Window(window_caption)
 
     def get_picture(self):
-        width, height = self._window.size()
+        width, height = self._window.client_size()
 
         with self._window.dc() as window_dc:
             with CompatibleDC(window_dc) as target_dc:
