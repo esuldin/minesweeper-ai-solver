@@ -32,7 +32,7 @@ class MinesweeperSolverTrainer:
     def train(self, trainer_loop_passes, epochs, batches, batch_size):
         samples_in_epoch = batches * batch_size
 
-        print('Training Iter Idx, Games Played, Games Won, Cells Revealed')
+        print('Training Iter Idx, Games Played, Games Won, Cells Revealed, Loss')
         for trainer_loop_pass_idx in range(trainer_loop_passes):
             games_played = 0
             games_won = 0
@@ -67,10 +67,10 @@ class MinesweeperSolverTrainer:
                     if game.state() == GameState.WIN:
                         games_won += 1
 
-            print('{}, {}, {}, {}'.format(trainer_loop_pass_idx, games_played, games_won, cells_revealed))
-
             training_set = MinesweeperSolverDataSet(batch_field_states, batch_predictions, self._solver.vectorizer())
             training_loader = torch.utils.data.DataLoader(training_set, batch_size=batch_size)
+
+            running_loss = 0.
 
             self._solver.model().train()
             for epoch_idx in range(epochs):
@@ -86,10 +86,15 @@ class MinesweeperSolverTrainer:
 
                     # Compute the loss and its gradients
                     loss = self._loss_fn(model_prediction, expected_prediction)
+                    running_loss += loss.item() * field.size(0)
                     loss.backward()
 
                     # Adjust learning weights
                     self._optimizer.step()
+
+            running_loss /= epochs * batches * batch_size
+            print('{}, {}, {}, {}, {}'.format(trainer_loop_pass_idx, games_played, games_won, cells_revealed,
+                                              running_loss))
 
 
 if __name__ == '__main__':
