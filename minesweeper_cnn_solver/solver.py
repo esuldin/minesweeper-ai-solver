@@ -16,6 +16,8 @@ class MinesweeperSolver:
         self._model = model if model is not None else MinesweeperSolverModel()
         self._vectorizer = vectorizer if vectorizer is not None else MinesweeperFieldVectorizer()
 
+        self._model.eval()
+
     def __call__(self, field):
         # The model always accepts batches, therefore, it is necessary to create a batch with a single element to get
         # a prediction.
@@ -38,7 +40,7 @@ class MinesweeperSolver:
     def _cell_idx(self, field, model_prediction):
         next_cell_prediction = None
         next_cell_index = None
-        with numpy.nditer(model_prediction.numpy(), ['multi_index']) as predictions_it:
+        with numpy.nditer(model_prediction.detach().numpy(), ['multi_index']) as predictions_it:
             for x in predictions_it:
                 if field[predictions_it.multi_index] == CellState.CLOSED:
                     if next_cell_prediction is None or x < next_cell_prediction:

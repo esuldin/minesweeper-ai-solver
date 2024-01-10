@@ -20,7 +20,6 @@ class MinesweeperSolverModel(torch.nn.Module):
             torch.nn.Conv2d(in_channels=64, out_channels=1, kernel_size=1, padding='same', dtype=dtype),
             torch.nn.Sigmoid()
         )
-        self._model.eval()
 
     def forward(self, x):
         x = self._model(x)
@@ -34,6 +33,7 @@ class MinesweeperSolverModel(torch.nn.Module):
         torch.save(self._model.state_dict(), path)
 
     @staticmethod
-    def fromfile(self, path):
+    def fromfile(path):
         model = MinesweeperSolverModel()
         model._model.load_state_dict(torch.load(path))
+        return model
