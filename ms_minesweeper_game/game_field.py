@@ -1,8 +1,9 @@
 import cv2
 import numpy
 import os
+import time
 
-from minesweeper import CellState
+from minesweeper import CellState, GameState, Mode
 
 
 class TrimMode:
@@ -57,15 +58,19 @@ class PatternLibrary:
 
 
 class MsMinesweeperClassicField:
-    def __init__(self, window_manager):
+    def __init__(self, window_manager, mode=None):
         self._window_manager = window_manager
         self._pattern_library = PatternLibrary()
         self._horizontal_lines = []
         self._vertical_lines = []
         self._min_distance_between_lines = 20
         self._field_header_height = 68
+        self._mode = mode
+        self._state = None
 
         self._create_field()
+
+        self._updated_field_idx = 0
 
     def _merge_nearby_lines(self, lines, threshold=None):
         original_lines = sorted(lines)
@@ -114,13 +119,13 @@ class MsMinesweeperClassicField:
 
     def _create_field(self):
         img = self._window_manager.get_picture()
-        cv2.imwrite('../window.png', img)
+        cv2.imwrite('window.png', img)
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        cv2.imwrite('../gray.png', gray)
+        cv2.imwrite('gray.png', gray)
 
         edges = cv2.Canny(gray, 250, 300)
-        cv2.imwrite('../edges.png', edges)
+        cv2.imwrite('edges.png', edges)
 
         detected_lines = cv2.HoughLines(edges, 0.1, numpy.pi / 180, 200)
 
@@ -143,7 +148,9 @@ class MsMinesweeperClassicField:
         self._horizontal_lines = self._trim_lines(img, self._horizontal_lines, TrimMode.HORIZONTAL_LINES,
                                                   x_coordinate, ColorComponent.B, color_value, color_value_threshold)
 
-        self._field = [[CellState.CLOSED for _ in self._vertical_lines[:-1]] for _ in self._horizontal_lines[:-1]]
+        self._field = numpy.full((len(self._vertical_lines) - 1, len(self._vertical_lines) - 1), CellState.CLOSED)
+        self._update_game_mode()
+        self._update_state()
 
         _field_left_top_corner = (self._vertical_lines[0], self._horizontal_lines[0])
         _field_right_bottom_corner = (self._vertical_lines[-1], self._horizontal_lines[-1])
@@ -157,11 +164,30 @@ class MsMinesweeperClassicField:
             y = line
             cv2.line(img, (_field_left_top_corner[0], y), (_field_right_bottom_corner[0], y), (0, 0, 255), 1)
 
-        cv2.imwrite('../lines.png', img)
+        cv2.imwrite('lines.png', img)
+
+    def _game_mode_by_field_shape(self, shape):
+        if shape == (8, 8):
+            return Mode.CLASSIC
+        elif shape == (9, 9):
+            return Mode.EASY
+        elif shape == (16, 16):
+            return Mode.MEDIUM
+        elif shape == (16, 30):
+            return Mode.EXPERT
+        else:
+            assert False, 'Cannot determine the game mode'
+
+    def _update_game_mode(self):
+        if self._mode is None:
+            self._mode = self._game_mode_by_field_shape(self._field.shape)
+        else:
+            assert self._field.shape == (self._mode.height(), self._mode.width()), 'Cannot determine the game mode'
 
     def _update_field(self):
         img = self._window_manager.get_picture()
-        cv2.imwrite('../update_field.png', img)
+        cv2.imwrite('update_field_%d.png' % self._updated_field_idx, img)
+        self._updated_field_idx += 1
 
         for horizontal_line_idx in range(len(self._horizontal_lines) - 1):
             for vertical_line_idx in range(len(self._vertical_lines) - 1):
@@ -175,17 +201,40 @@ class MsMinesweeperClassicField:
                 #if horizontal_line_idx == 1 and vertical_line_idx == 29:
                 #    cv2.imwrite('%d-%d.png' % (horizontal_line_idx, vertical_line_idx), cell_img)
 
-                self._field[horizontal_line_idx][vertical_line_idx] = self._pattern_library.match(cell_img)
+                self._field[horizontal_line_idx, vertical_line_idx] = self._pattern_library.match(cell_img)
+        self._update_state()
+
+    def _update_state(self):
+        if self._state is None or self._state == GameState.IN_PROGRESS:
+            if numpy.count_nonzero(self._field == CellState.MINE):
+                self._state = GameState.GAME_OVER
+            elif numpy.count_nonzero(self._field == CellState.CLOSED) == self._mode.mines():
+                self._state = GameState.WIN
+            else:
+                self._state = GameState.IN_PROGRESS
+        return self._state
+
+    def state(self):
+        return self._state
 
     def field(self):
         return self._field
 
-    def open(self, idx):
+    def _cell_idx_to_window_coordinates(self, idx):
         y_idx = idx // (len(self._vertical_lines) - 1)
         x_idx = idx % (len(self._vertical_lines) - 1)
 
         x = (self._vertical_lines[x_idx] + self._vertical_lines[x_idx + 1]) // 2
         y = (self._horizontal_lines[y_idx] + self._horizontal_lines[y_idx + 1]) // 2
 
+        return x, y
+
+    def open(self, idx):
+        x, y = self._cell_idx_to_window_coordinates(idx)
         self._window_manager.click(x, y)
+
+        # skip animation before updating the field
+        time.sleep(0.3)
         self._update_field()
+
+        return self._state
