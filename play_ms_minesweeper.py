@@ -11,6 +11,8 @@ game = MsMinesweeperClassicField(window_manager)
 
 if game.mode() == Mode.CLASSIC:
     model = MinesweeperSolverModel.fromfile('classic_minesweeper_model.pt')
+elif game.mode() == Mode.MEDIUM:
+    model = MinesweeperSolverModel.fromfile('medium_minesweeper_model_1000ti.pt')
 else:
     raise NotImplementedError('Only classic mode is supported right now!')
 
