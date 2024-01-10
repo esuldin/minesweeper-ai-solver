@@ -34,7 +34,14 @@ class MinesweeperGame:
                     mines_count += 1
         return mines_count
 
-    def _create_field(self, first_opened_cell_idx):
+    def _generate_mines_idx(self, first_opened_cell_idx):
+        row_idx, column_idx = numpy.unravel_index(first_opened_cell_idx, self._mode.shape())
+        rows_to_exclude = self._idx_to_check(row_idx, self._mode.height() - 1)
+        columns_to_exclude = self._idx_to_check(column_idx, self._mode.width() - 1)
+
+        idx_to_exclude = {numpy.ravel_multi_index((row_idx, column_idx), self._mode.shape())
+                          for row_idx in rows_to_exclude for column_idx in columns_to_exclude}
+
         random.seed(self._seed)
 
         mine_idx_range = (0, self._mode.width() * self._mode.height(), 1)
@@ -42,14 +49,18 @@ class MinesweeperGame:
 
         while len(mines) < self._mode.mines():
             mine_idx = random.randrange(*mine_idx_range)
-            if mine_idx != first_opened_cell_idx:
+            if mine_idx not in idx_to_exclude:
                 mines.add(mine_idx)
 
+        return mines
+
+    def _create_field(self, first_opened_cell_idx):
         self._field = numpy.full((self._mode.height(), self._mode.width()),
                                  CellState.NO_MINES_NEARBY, dtype=numpy.int8)
 
+        mines = self._generate_mines_idx(first_opened_cell_idx)
         for mine_idx in mines:
-            self._field[mine_idx // self._mode.width(), mine_idx % self._mode.width()] = CellState.MINE
+            self._field[numpy.unravel_index(mine_idx, self._mode.shape())] = CellState.MINE
 
         for row_idx in range(self._mode.height()):
             for column_idx in range(self._mode.width()):

@@ -28,10 +28,10 @@ class TestMinesweeper(unittest.TestCase):
                          game.mode().height() * game.mode().width())
 
         game.open(4)
-        expected_field = numpy.array([[-1, -1, -1, -1,  1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1, -1, -1, -1],
+        expected_field = numpy.array([[ 0,  0,  0,  0,  0,  0,  0,  0],
+                                      [ 0,  0,  0,  0,  0,  0,  0,  0],
+                                      [ 0,  0,  1,  1,  1,  0,  0,  0],
+                                      [ 1,  1,  2, -1,  1,  1,  1,  1],
                                       [-1, -1, -1, -1, -1, -1, -1, -1],
                                       [-1, -1, -1, -1, -1, -1, -1, -1],
                                       [-1, -1, -1, -1, -1, -1, -1, -1],
@@ -79,20 +79,20 @@ class TestMinesweeper(unittest.TestCase):
         self.assertEqual(numpy.count_nonzero(game.field() == CellState.CLOSED),
                          game.mode().height() * game.mode().width())
 
-        cell_near_mine_idx = 4
-        game.open(cell_near_mine_idx)
+        first_cell_idx = 3
+        game.open(first_cell_idx)
         self.assertEqual(game.state(), GameState.IN_PROGRESS)
 
         cell_with_mine_idx = 5
         game.open(cell_with_mine_idx)
         self.assertEqual(game.state(), GameState.GAME_OVER)
 
-        expected_field = numpy.array([[-1, -1, -1, -1,  1, -2, -1, -1],
-                                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1, -1, -1, -1],
+        expected_field = numpy.array([[ 0,  0,  0,  0,  1, -2,  1,  0],
+                                      [ 0,  0,  0,  0,  1,  1,  1,  0],
+                                      [ 0,  0,  0,  0,  0,  0,  0,  0],
+                                      [ 1,  1,  1,  0,  0,  1,  1,  1],
+                                      [-1, -1,  1,  0,  1,  2, -1, -1],
+                                      [-1, -1,  3,  1,  3, -1, -1, -1],
                                       [-1, -1, -1, -1, -1, -1, -1, -1],
                                       [-1, -1, -1, -1, -1, -1, -1, -1]])
         self.assertTrue(numpy.array_equiv(game.field(), expected_field))
