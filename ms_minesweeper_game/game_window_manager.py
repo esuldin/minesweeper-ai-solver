@@ -153,6 +153,8 @@ class Window:
 
     def click(self, x, y):
         windll.user32.SetForegroundWindow(self._hwnd)
+        while windll.user32.GetForegroundWindow() != self._hwnd:
+            time.sleep(0.01)
 
         rect = self._window_rect()
         windll.user32.SetCursorPos(rect.left + x, rect.top + y)
