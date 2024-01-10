@@ -16,6 +16,9 @@ class Mode:
     def width(self):
         return self._width
 
+    def shape(self):
+        return self.height(), self.width()
+
     def mines(self):
         return self._mines
 
