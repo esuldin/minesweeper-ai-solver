@@ -127,7 +127,7 @@ class MsMinesweeperClassicField:
         edges = cv2.Canny(gray, 250, 300)
         cv2.imwrite('edges.png', edges)
 
-        detected_lines = cv2.HoughLines(edges, 0.1, numpy.pi / 180, 200)
+        detected_lines = cv2.HoughLines(edges, 0.1, numpy.pi / 180, 170)
 
         for line in detected_lines:
             rho, theta = line[0]
