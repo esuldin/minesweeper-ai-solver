@@ -214,11 +214,14 @@ class MsMinesweeperClassicField:
                 self._state = GameState.IN_PROGRESS
         return self._state
 
+    def field(self):
+        return self._field
+
     def state(self):
         return self._state
 
-    def field(self):
-        return self._field
+    def mode(self):
+        return self._mode
 
     def _cell_idx_to_window_coordinates(self, idx):
         y_idx = idx // (len(self._vertical_lines) - 1)
