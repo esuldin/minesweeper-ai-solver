@@ -4,6 +4,12 @@ class Mode:
         self._width = width
         self._mines = mines
 
+    def __eq__(self, other):
+        if isinstance(other, Mode):
+            return self.height() == other.height() and self.width() == other.width() and self.mines() == other.mines()
+        else:
+            return False
+
     def height(self):
         return self._height
 
