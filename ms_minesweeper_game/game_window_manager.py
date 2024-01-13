@@ -232,7 +232,7 @@ class CompatibleBitmap:
         return numpy.copy(image_buffer[:, :, :3])
 
 
-class GameWindowManager:
+class WindowManager:
     def __init__(self, window_caption):
         self._window = Window(window_caption)
 
@@ -251,6 +251,6 @@ class GameWindowManager:
         self._window.click(x, y)
 
 
-class MsMinesweeperWindowManager(GameWindowManager):
+class MsMinesweeperWindowManager(WindowManager):
     def __init__(self):
         super(MsMinesweeperWindowManager, self).__init__('Microsoft Minesweeper')
