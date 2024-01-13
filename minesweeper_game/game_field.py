@@ -10,8 +10,7 @@ class MinesweeperGame:
         self._mode = mode
         self._seed = seed
         self._field = None
-        self._revealed_field = numpy.full((self._mode.height(), self._mode.width()),
-                                          CellState.CLOSED, dtype=numpy.int8)
+        self._revealed_field = numpy.full(self._mode.shape(), CellState.CLOSED, dtype=numpy.int8)
         self._state = None
         self._update_state()
 
@@ -34,7 +33,7 @@ class MinesweeperGame:
                     mines_count += 1
         return mines_count
 
-    def _generate_mines_idx(self, first_opened_cell_idx):
+    def _generate_mines(self, first_opened_cell_idx):
         row_idx, column_idx = numpy.unravel_index(first_opened_cell_idx, self._mode.shape())
         rows_to_exclude = self._idx_to_check(row_idx, self._mode.height() - 1)
         columns_to_exclude = self._idx_to_check(column_idx, self._mode.width() - 1)
@@ -55,36 +54,34 @@ class MinesweeperGame:
         return mines
 
     def _create_field(self, first_opened_cell_idx):
-        self._field = numpy.full((self._mode.height(), self._mode.width()),
-                                 CellState.NO_MINES_NEARBY, dtype=numpy.int8)
+        self._field = numpy.full(self._mode.shape(), CellState.NO_MINES_NEARBY, dtype=numpy.int8)
 
-        mines = self._generate_mines_idx(first_opened_cell_idx)
+        mines = self._generate_mines(first_opened_cell_idx)
         for mine_idx in mines:
             self._field[numpy.unravel_index(mine_idx, self._mode.shape())] = CellState.MINE
 
-        for row_idx in range(self._mode.height()):
-            for column_idx in range(self._mode.width()):
-                if self._field[row_idx, column_idx] == CellState.MINE:
-                    continue
+        for row_idx, column_idx in numpy.ndindex(self._field.shape):
+            if self._field[row_idx, column_idx] == CellState.MINE:
+                continue
 
-                mines_count = self._count_nearest_mines(row_idx, column_idx)
+            mines_count = self._count_nearest_mines(row_idx, column_idx)
 
-                if mines_count == 1:
-                    self._field[row_idx, column_idx] = CellState.ONE_MINE_NEARBY
-                elif mines_count == 2:
-                    self._field[row_idx, column_idx] = CellState.TWO_MINES_NEARBY
-                elif mines_count == 3:
-                    self._field[row_idx, column_idx] = CellState.THREE_MINES_NEARBY
-                elif mines_count == 4:
-                    self._field[row_idx, column_idx] = CellState.FOUR_MINES_NEARBY
-                elif mines_count == 5:
-                    self._field[row_idx, column_idx] = CellState.FIVE_MINES_NEARBY
-                elif mines_count == 6:
-                    self._field[row_idx, column_idx] = CellState.SIX_MINES_NEARBY
-                elif mines_count == 7:
-                    self._field[row_idx, column_idx] = CellState.SEVEN_MINES_NEARBY
-                elif mines_count == 8:
-                    self._field[row_idx, column_idx] = CellState.EIGHT_MINES_NEARBY
+            if mines_count == 1:
+                self._field[row_idx, column_idx] = CellState.ONE_MINE_NEARBY
+            elif mines_count == 2:
+                self._field[row_idx, column_idx] = CellState.TWO_MINES_NEARBY
+            elif mines_count == 3:
+                self._field[row_idx, column_idx] = CellState.THREE_MINES_NEARBY
+            elif mines_count == 4:
+                self._field[row_idx, column_idx] = CellState.FOUR_MINES_NEARBY
+            elif mines_count == 5:
+                self._field[row_idx, column_idx] = CellState.FIVE_MINES_NEARBY
+            elif mines_count == 6:
+                self._field[row_idx, column_idx] = CellState.SIX_MINES_NEARBY
+            elif mines_count == 7:
+                self._field[row_idx, column_idx] = CellState.SEVEN_MINES_NEARBY
+            elif mines_count == 8:
+                self._field[row_idx, column_idx] = CellState.EIGHT_MINES_NEARBY
 
     def field(self):
         return self._revealed_field
@@ -99,8 +96,7 @@ class MinesweeperGame:
         if self._state != GameState.IN_PROGRESS:
             return self._state
 
-        row_idx = idx // self._mode.width()
-        column_idx = idx % self._mode.width()
+        row_idx, column_idx = numpy.unravel_index(idx, self._field.shape)
 
         cells_to_process = SimpleQueue()
         cells_to_process.put((row_idx, column_idx))
