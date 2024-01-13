@@ -184,13 +184,13 @@ class MsMinesweeperClassicField:
         elif shape == (16, 30):
             return Mode.EXPERT
         else:
-            assert False, 'Cannot determine the game mode'
+            raise RuntimeError('Cannot determine the game mode.')
 
     def _update_game_mode(self):
         if self._mode is None:
             self._mode = self._game_mode_by_field_shape(self._field.shape)
-        else:
-            assert self._field.shape == (self._mode.height(), self._mode.width()), 'Cannot determine the game mode'
+        elif self._field.shape != (self._mode.height(), self._mode.width()):
+            raise RuntimeError('The field shape does not correspond the specified game mode.')
 
     def _update_field(self):
         img = self._window_manager.get_picture()
