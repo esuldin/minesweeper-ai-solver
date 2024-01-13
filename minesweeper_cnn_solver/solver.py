@@ -2,7 +2,7 @@ import numpy
 
 from torch.utils.data import default_collate
 
-from minesweeper import CellState
+from minesweeper_game.game_interface import CellState
 
 from .model import MinesweeperSolverModel
 from .vectorizer import MinesweeperFieldVectorizer

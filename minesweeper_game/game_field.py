@@ -2,7 +2,7 @@ import random
 import numpy
 
 from queue import SimpleQueue
-from minesweeper import CellState, Mode, GameState
+from minesweeper_game.game_interface import CellState, Mode, GameState
 
 
 class MinesweeperGame:

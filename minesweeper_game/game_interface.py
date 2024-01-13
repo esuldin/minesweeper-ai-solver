@@ -10,6 +10,18 @@ class Mode:
         else:
             return False
 
+    def __str__(self):
+        if self == Mode.CLASSIC:
+            return 'classic'
+        elif self == Mode.EASY:
+            return 'easy'
+        elif self == Mode.MEDIUM:
+            return 'medium'
+        elif self == Mode.EXPERT:
+            return 'expert'
+        else:
+            return f'{self.height()}x{self.width()}x{self.mines()}'
+
     def height(self):
         return self._height
 

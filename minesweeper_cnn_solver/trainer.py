@@ -3,10 +3,8 @@ import torch.nn
 import torch.optim
 import torch.utils.data
 
-from minesweeper import Mode, GameState, CellState
-from minesweeper_game.game_field import MinesweeperGame
-
-from .solver import MinesweeperSolver
+from minesweeper_game.game_interface import GameState, CellState
+from minesweeper_game import MinesweeperGame
 
 
 class MinesweeperSolverDataSet(torch.utils.data.Dataset):

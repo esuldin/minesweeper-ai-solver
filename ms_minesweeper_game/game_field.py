@@ -3,7 +3,7 @@ import numpy
 import os
 import time
 
-from minesweeper import CellState, GameState, Mode
+from minesweeper_game.game_interface import CellState, GameState, Mode
 
 
 class TrimMode:

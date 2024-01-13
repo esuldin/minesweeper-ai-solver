@@ -1,6 +1,6 @@
 import numpy
 
-from minesweeper import GameState, Mode
+from minesweeper_game.game_interface import GameState, Mode
 
 from ms_minesweeper_game import MsMinesweeperClassicField, MsMinesweeperWindowManager
 from minesweeper_cnn_solver import MinesweeperSolver, MinesweeperSolverModel

@@ -1,6 +1,6 @@
 import numpy
 
-from minesweeper import CellState
+from minesweeper_game.game_interface import CellState
 
 
 class MinesweeperFieldVectorizer:
