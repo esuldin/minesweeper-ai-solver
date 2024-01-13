@@ -29,10 +29,13 @@ class MinesweeperSolverTrainer:
         self._optimizer = torch.optim.Adam(self._solver.model().parameters())
         self._loss_fn = torch.nn.BCELoss()
 
+    def _log(self, msg):
+        print(msg)
+
     def train(self, trainer_loop_passes, epochs, batches, batch_size):
         samples_in_epoch = batches * batch_size
 
-        print('Training Iter Idx, Games Played, Games Won, Cells Revealed, Loss')
+        self._log('Training Iter Idx, Games Played, Games Won, Cells Revealed, Loss')
         for trainer_loop_pass_idx in range(trainer_loop_passes):
             games_played = 0
             games_won = 0
@@ -93,8 +96,7 @@ class MinesweeperSolverTrainer:
                     self._optimizer.step()
 
             running_loss /= epochs * batches * batch_size
-            print('{}, {}, {}, {}, {}'.format(trainer_loop_pass_idx, games_played, games_won, cells_revealed,
-                                              running_loss))
+            self._log(f'{trainer_loop_pass_idx}, {games_played}, {games_won}, {cells_revealed}, {running_loss}')
 
 
 if __name__ == '__main__':
