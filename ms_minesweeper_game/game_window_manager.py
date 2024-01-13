@@ -122,6 +122,8 @@ class WindowDC:
 class Window:
     def __init__(self, caption):
         self._hwnd = windll.user32.FindWindowW(None, caption)
+        if not self._hwnd:
+            raise RuntimeError(f"'{caption}' window is not found. Please make sure that the application is run.")
 
     def handle(self):
         return self._hwnd
@@ -141,7 +143,6 @@ class Window:
         rect = wintypes.RECT()
         windll.user32.GetWindowRect(self._hwnd, ctypes.byref(rect))
         return rect
-
 
     def client_size(self):
         rect = self._client_rect()
