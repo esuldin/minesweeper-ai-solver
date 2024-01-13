@@ -74,13 +74,13 @@ else:
 if args.model:
     model = MinesweeperSolverModel.fromfile(args.model)
 elif game_mode == Mode.CLASSIC:
-    model = MinesweeperSolverModel.fromfile('classic_minesweeper_model_1000ti.2.pt')
+    model = MinesweeperSolverModel.fromfile('trained_models/classic_minesweeper_model.pt')
 elif game_mode == Mode.EASY:
-    model = MinesweeperSolverModel.fromfile('easy_1000ti_4e_5b_200.pt')
+    model = MinesweeperSolverModel.fromfile('trained_models/easy_minesweeper_model.pt')
 elif game_mode == Mode.MEDIUM:
-    model = MinesweeperSolverModel.fromfile('medium_minesweeper_model_4000ti.pt')
+    model = MinesweeperSolverModel.fromfile('trained_models/medium_minesweeper_model.pt')
 elif game_mode == Mode.EXPERT:
-    model = MinesweeperSolverModel.fromfile('expert_minesweeper_model_4000ti.pt')
+    model = MinesweeperSolverModel.fromfile('trained_models/expert_minesweeper_model.pt')
 else:
     raise ValueError('The model cannot be selected.')
 
