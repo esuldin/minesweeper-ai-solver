@@ -95,39 +95,3 @@ class MinesweeperSolverTrainer:
 
             running_loss /= epochs * batches * batch_size
             self._log(f'{trainer_loop_pass_idx}, {games_played}, {games_won}, {cells_revealed}, {running_loss}')
-
-
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(description='Train CNN model.')
-    parser.add_argument('-g', '--game-mode', help='The Minesweeper game mode to train the model.',
-                        default='classic', choices=['classic', 'easy', 'medium', 'expert'])
-    parser.add_argument('-t', '--training-iterations', help='The number of training iterations.',
-                        default=2000, type=int)
-    parser.add_argument('-e', '--epochs', help='The number of epochs during one training iteration.',
-                        default=2, type=int)
-    parser.add_argument('-b', '--batches', help='The number of batches in one epoch.',
-                        default=5, type=int)
-    parser.add_argument('-s', '--batch-size', help='The number of samples in one batch.',
-                        default=200, type=int)
-    parser.add_argument('-o', '--output', help='The path to keep trained model.',
-                        default='minesweeper_model.pt')
-
-    args = parser.parse_args()
-
-    if args.game_mode == 'classic':
-        selected_game_mode = Mode.CLASSIC
-    elif args.game_mode == 'easy':
-        selected_game_mode = Mode.EASY
-    elif args.game_mode == 'medium':
-        selected_game_mode = Mode.MEDIUM
-    elif args.game_mode == 'expert':
-        selected_game_mode = Mode.EXPERT
-    else:
-        selected_game_mode = None
-
-    solver = MinesweeperSolver()
-    trainer = MinesweeperSolverTrainer(selected_game_mode, solver)
-    trainer.train(args.training_iterations, args.epochs, args.batches, args.batch_size)
-    solver.model().save(args.output)
