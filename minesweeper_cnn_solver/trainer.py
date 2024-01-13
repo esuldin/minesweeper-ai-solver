@@ -56,10 +56,10 @@ class MinesweeperSolverTrainer:
                         batch_field_states.append(numpy.copy(game.field()))
                         cell_idx, prediction = self._solver(game.field())
 
-                        norm_prediction = numpy.multiply(prediction.numpy(), game.field() == CellState.CLOSED)
-                        norm_prediction[numpy.unravel_index(cell_idx, norm_prediction.shape)] = \
+                        sample = prediction.detach()
+                        sample[numpy.unravel_index(cell_idx, sample.shape)] = \
                             1 if game.open(cell_idx) == GameState.GAME_OVER else 0
-                        batch_predictions.append(norm_prediction)
+                        batch_predictions.append(sample)
 
                         samples_taken += 1
 
