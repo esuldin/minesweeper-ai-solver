@@ -128,3 +128,44 @@ class MinesweeperGame:
 
     def state(self):
         return self._state
+
+
+class MinesweeperFieldPseudoGraphicsVisualizer:
+    def draw(self, field):
+        height, width = field.shape
+        result = '╔' + '╦'.join(['═' for _ in range(width)]) + '╗' + '\n'
+        for row_idx in range(height):
+            result += ('║' + '║'.join([self._cell_state_to_symbol(field[row_idx, column_idx])
+                                       for column_idx in range(width)]) + '║' + '\n')
+
+            if row_idx < (height - 1):
+                result += '╠' + '╬'.join(['═' for _ in range(width)]) + '╣' + '\n'
+
+        result += '╚' + '╩'.join(['═' for _ in range(width)]) + '╝'
+        return result
+
+    def _cell_state_to_symbol(self, cell_state):
+        if cell_state == CellState.NO_MINES_NEARBY:
+            return ' '
+        elif cell_state == CellState.CLOSED:
+            return '▓'
+        elif cell_state == CellState.MINE:
+            return '*'
+        elif cell_state == CellState.ONE_MINE_NEARBY:
+            return '1'
+        elif cell_state == CellState.TWO_MINES_NEARBY:
+            return '2'
+        elif cell_state == CellState.THREE_MINES_NEARBY:
+            return '3'
+        elif cell_state == CellState.FOUR_MINES_NEARBY:
+            return '4'
+        elif cell_state == CellState.FIVE_MINES_NEARBY:
+            return '5'
+        elif cell_state == CellState.SIX_MINES_NEARBY:
+            return '6'
+        elif cell_state == CellState.SEVEN_MINES_NEARBY:
+            return '7'
+        elif cell_state == CellState.EIGHT_MINES_NEARBY:
+            return '8'
+
+        raise ValueError('Unexpected cell state.')
