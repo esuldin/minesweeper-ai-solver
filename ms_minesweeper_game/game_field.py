@@ -70,7 +70,28 @@ class MsMinesweeperClassicField:
 
         self._create_field()
 
-        self._updated_field_idx = 0
+        self._enable_debug_dump_img = os.environ.get('MSAIS_DEBUG', False)
+        self._debug_dump_img_idx = 0
+
+    def _dump_debug_img(self, name, img):
+        if self._enable_debug_dump_img:
+            self._enable_debug_dump_img += 1
+            cv2.imwrite(f'{self._enable_debug_dump_img}_{name}', img)
+
+    def _dump_detected_lines(self, img):
+        _field_left_top_corner = (self._vertical_lines[0], self._horizontal_lines[0])
+        _field_right_bottom_corner = (self._vertical_lines[-1], self._horizontal_lines[-1])
+
+        # debug image
+        for line in self._vertical_lines:
+            x = line
+            cv2.line(img, (x, _field_left_top_corner[1]), (x, _field_right_bottom_corner[1]), (0, 0, 255), 1)
+
+        for line in self._horizontal_lines:
+            y = line
+            cv2.line(img, (_field_left_top_corner[0], y), (_field_right_bottom_corner[0], y), (0, 0, 255), 1)
+
+        self._dump_debug_img('lines.png', img)
 
     def _merge_nearby_lines(self, lines, threshold=None):
         original_lines = sorted(lines)
@@ -119,13 +140,13 @@ class MsMinesweeperClassicField:
 
     def _create_field(self):
         img = self._window_manager.get_picture()
-        cv2.imwrite('window.png', img)
+        self._dump_debug_img('window.png', img)
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        cv2.imwrite('gray.png', gray)
+        self._dump_debug_img('gray.png', gray)
 
         edges = cv2.Canny(gray, 250, 300)
-        cv2.imwrite('edges.png', edges)
+        self._dump_debug_img('edges.png', edges)
 
         detected_lines = cv2.HoughLines(edges, 0.1, numpy.pi / 180, 170)
 
@@ -147,24 +168,11 @@ class MsMinesweeperClassicField:
         color_value_threshold = 0.15
         self._horizontal_lines = self._trim_lines(img, self._horizontal_lines, TrimMode.HORIZONTAL_LINES,
                                                   x_coordinate, ColorComponent.B, color_value, color_value_threshold)
+        self._dump_detected_lines(img)
 
         self._field = numpy.full((len(self._vertical_lines) - 1, len(self._vertical_lines) - 1), CellState.CLOSED)
         self._update_game_mode()
         self._update_state()
-
-        _field_left_top_corner = (self._vertical_lines[0], self._horizontal_lines[0])
-        _field_right_bottom_corner = (self._vertical_lines[-1], self._horizontal_lines[-1])
-
-        # debug image
-        for line in self._vertical_lines:
-            x = line
-            cv2.line(img, (x, _field_left_top_corner[1]), (x, _field_right_bottom_corner[1]), (0, 0, 255), 1)
-
-        for line in self._horizontal_lines:
-            y = line
-            cv2.line(img, (_field_left_top_corner[0], y), (_field_right_bottom_corner[0], y), (0, 0, 255), 1)
-
-        cv2.imwrite('lines.png', img)
 
     def _game_mode_by_field_shape(self, shape):
         if shape == (8, 8):
@@ -186,8 +194,7 @@ class MsMinesweeperClassicField:
 
     def _update_field(self):
         img = self._window_manager.get_picture()
-        cv2.imwrite('update_field_%d.png' % self._updated_field_idx, img)
-        self._updated_field_idx += 1
+        self._dump_debug_img('updated_field.png', img)
 
         for horizontal_line_idx in range(len(self._horizontal_lines) - 1):
             for vertical_line_idx in range(len(self._vertical_lines) - 1):
@@ -197,10 +204,6 @@ class MsMinesweeperClassicField:
                 right = self._vertical_lines[vertical_line_idx + 1]
 
                 cell_img = img[top:bottom, left:right]
-
-                #if horizontal_line_idx == 1 and vertical_line_idx == 29:
-                #    cv2.imwrite('%d-%d.png' % (horizontal_line_idx, vertical_line_idx), cell_img)
-
                 self._field[horizontal_line_idx, vertical_line_idx] = self._pattern_library.match(cell_img)
         self._update_state()
 
