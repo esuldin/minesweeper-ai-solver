@@ -170,7 +170,7 @@ class MsMinesweeperClassicField:
                                                   x_coordinate, ColorComponent.B, color_value, color_value_threshold)
         self._dump_detected_lines(img)
 
-        self._field = numpy.full((len(self._vertical_lines) - 1, len(self._vertical_lines) - 1), CellState.CLOSED)
+        self._field = numpy.full((len(self._horizontal_lines) - 1, len(self._vertical_lines) - 1), CellState.CLOSED)
         self._update_game_mode()
         self._update_state()
 
