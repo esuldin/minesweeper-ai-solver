@@ -41,10 +41,10 @@ class MinesweeperSolver:
         next_cell_prediction = None
         next_cell_index = None
         with numpy.nditer(model_prediction.detach().numpy(), ['multi_index']) as predictions_it:
-            for x in predictions_it:
+            for value in predictions_it:
                 if field[predictions_it.multi_index] == CellState.CLOSED:
-                    if next_cell_prediction is None or x < next_cell_prediction:
-                        next_cell_prediction = x
+                    if next_cell_prediction is None or value < next_cell_prediction:
+                        next_cell_prediction = value
                         next_cell_index = predictions_it.iterindex
 
         return next_cell_index
